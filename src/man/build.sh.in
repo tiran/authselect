@@ -66,9 +66,10 @@ ATTR+=" -a AUTHSELECT_PAM_DIR=\"@AUTHSELECT_PAM_DIR@\""
 ATTR+=" -a AUTHSELECT_PROFILE_DIR=\"@AUTHSELECT_PROFILE_DIR@\""
 ATTR+=" -a AUTHSELECT_VENDOR_DIR=\"@AUTHSELECT_VENDOR_DIR@\""
 
-for FILE in `find-files` ; do \
-    echo "Building manpage: $FILE"
-    @A2X@ -D . $ATTR --doctype manpage --format manpage "$FILE"
+for file in `find-files` ; do \
+    echo "Building manpage: $file"
+    dir=$(dirname `echo $file | sed 's|@srcdir@|.|'`)
+    @A2X@ -D "$dir" $ATTR --doctype manpage --format manpage "$file"
 done
 
 echo $prefix      >  $STAMPFILE
