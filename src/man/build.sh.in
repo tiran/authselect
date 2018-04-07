@@ -1,0 +1,75 @@
+#!/bin/bash
+
+prefix=$1
+exec_prefix=$2
+STAMPFILE="build.stamp"
+
+last-mod-time() {
+    MOD=`stat -c %Y "$1"`
+    
+    if [ $? -ne 0 ]; then
+        echo 0
+    fi
+    
+    echo $MOD
+}
+
+need-rerun() {
+    if [ `last-mod-time "$STAMPFILE"` -lt `last-mod-time build.sh` ]; then
+        echo "yes"
+        return 0
+    fi
+
+    if [ x`head -n 1 "$STAMPFILE"` != x"$prefix" ]; then
+        echo "yes"
+        return 0
+    fi
+
+    if [ x`tail -n 1 "$STAMPFILE"` != x"$exec_prefix" ]; then
+        echo "yes"
+        return 0
+    fi
+    
+    echo "no"
+    return 0
+}
+
+find-files() {
+    local FILES=`find @srcdir@ -type f -name '*.adoc' -printf '%d\t%p\n' | sort -nk1 | cut -f2-`    
+    
+    if [ `need-rerun` == "yes" ]; then
+        echo $FILES
+        return 0
+    fi
+    
+    local LASTBUILD=`last-mod-time "$STAMPFILE"`
+    local BUILD=""
+    
+    for FILE in $FILES ; do \
+        if [ `last-mod-time "$FILE"` -gt $LASTBUILD ]; then
+            BUILD+=" $FILE"
+        fi
+    done
+    
+    echo $BUILD
+}
+
+ATTR=""
+ATTR+=" -a sysconfdir=\"@sysconfdir@\""
+ATTR+=" -a AUTHSELECT_CONFIG_DIR=\"@AUTHSELECT_CONFIG_DIR@\""
+ATTR+=" -a AUTHSELECT_CUSTOM_DIR=\"@AUTHSELECT_CUSTOM_DIR@\""
+ATTR+=" -a AUTHSELECT_DCONF_BIN=\"@AUTHSELECT_DCONF_BIN@\""
+ATTR+=" -a AUTHSELECT_DCONF_DIR=\"@AUTHSELECT_DCONF_DIR@\""
+ATTR+=" -a AUTHSELECT_DCONF_FILE=\"@AUTHSELECT_DCONF_FILE@\""
+ATTR+=" -a AUTHSELECT_NSSWITCH_CONF=\"@AUTHSELECT_NSSWITCH_CONF@\""
+ATTR+=" -a AUTHSELECT_PAM_DIR=\"@AUTHSELECT_PAM_DIR@\""
+ATTR+=" -a AUTHSELECT_PROFILE_DIR=\"@AUTHSELECT_PROFILE_DIR@\""
+ATTR+=" -a AUTHSELECT_VENDOR_DIR=\"@AUTHSELECT_VENDOR_DIR@\""
+
+for FILE in `find-files` ; do \
+    echo "Building manpage: $FILE"
+    @A2X@ -D . $ATTR --doctype manpage --format manpage "$FILE"
+done
+
+echo $prefix      >  $STAMPFILE
+echo $exec_prefix >> $STAMPFILE

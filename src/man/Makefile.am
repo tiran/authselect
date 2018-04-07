@@ -1,12 +1,6 @@
-expand_prefix =                                                               \
-    (                                                                         \
-     $(SED) -e 's,$${exec_prefix},$(exec_prefix),g' |                         \
-     $(SED) -e 's,$${prefix},$(prefix),g'                                     \
-    )
-
 if HAVE_MANPAGES
 BUILT_SOURCES = \
-    expand_files \
+    build_manpages \
     $(NULL)
 
 man_MANS = \
@@ -15,11 +9,8 @@ man_MANS = \
     authselect-migration.7 \
     $(NULL)
 
-expand_files:
-	for FILE in $(man_MANS) ; do \
-		$(expand_prefix) < $$FILE.txt.in > $$FILE.txt ; \
-		$(A2X) -D . --doctype manpage --format manpage $$FILE.txt ; \
-	done
+build_manpages:
+	./build.sh $(prefix) $(exec_prefix)
 
 .PHONY: expand_files
 
